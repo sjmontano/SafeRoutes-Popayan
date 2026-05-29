@@ -116,7 +116,7 @@ function lookupIntersection(calle, carrera) {
     zone: e.zone,
     lat: e.lat,
     lng: e.lng,
-    icon: '📍',
+    icon: 'IconMapPin',
     isIntersection: true,
   }));
 }
@@ -140,7 +140,7 @@ function lookupStreet(street) {
     zone: e.zone,
     lat: e.lat,
     lng: e.lng,
-    icon: '📍',
+    icon: 'IconMapPin',
     isStreet: true,
     street: e.street,
   }));

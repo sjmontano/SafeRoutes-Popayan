@@ -192,10 +192,10 @@ for (const lm of LANDMARKS) {
 }
 
 const CATEGORY_ICONS = {
-  turismo: '🏛️', cultura: '🎭', restaurante: '🍽️', hotel: '🏨',
-  comercio: '🛍️', transporte: '🚌', salud: '🏥', educacion: '🎓',
-  gobierno: '🏛', deporte: '⚽', parque: '🌳', banco: '🏦',
-  barrio: '🏘️', religion: '⛪', entierro: '🪦',
+  turismo: 'IconBuildingMonument', cultura: 'IconMasksTheater', restaurante: 'IconRestaurant', hotel: 'IconBuilding',
+  comercio: 'IconBuildingStore', transporte: 'IconBus', salud: 'IconHeartPlus', educacion: 'IconSchool',
+  gobierno: 'IconBuildingGovernment', deporte: 'IconBallFootball', parque: 'IconTree', banco: 'IconBuildingBank',
+  barrio: 'IconBuildings', religion: 'IconChurch', entierro: 'IconCross',
 };
 
 const CATEGORY_LABELS = {

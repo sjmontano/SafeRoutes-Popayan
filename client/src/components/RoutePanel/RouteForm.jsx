@@ -5,12 +5,13 @@ import {
   fetchHourFactor,
   fetchTraffic,
 } from '../../utils/api';
+import { getResultIcon, getModeIcon, getRouteTypeIcon, IconMapPin } from '../../utils/icons';
 
 const MODES = [
-  { key: 'walking', icon: '🚶', label: 'Caminando' },
-  { key: 'bike', icon: '🚴', label: 'Bicicleta' },
-  { key: 'car', icon: '🚗', label: 'Carro' },
-  { key: 'motorcycle', icon: '🏍️', label: 'Moto' },
+  { key: 'walking', label: 'Caminando' },
+  { key: 'bike', label: 'Bicicleta' },
+  { key: 'car', label: 'Carro' },
+  { key: 'motorcycle', label: 'Moto' },
 ];
 
 const TRAFFIC_AFFECTED = ['car', 'motorcycle'];
@@ -192,7 +193,7 @@ export default function RouteForm({ onRouteResult }) {
                 onMouseEnter={(e) => e.target.style.background = 'var(--surface-alt)'}
                 onMouseLeave={(e) => e.target.style.background = 'var(--white)'}
               >
-                {n.isLandmark && <span style={{ marginRight: 6 }}>{n.icon || '📍'}</span>}
+                <span style={{ marginRight: 6, display: 'inline-flex', verticalAlign: 'middle' }}>{getResultIcon(n)}</span>
                 <strong>{n.name}</strong>
                 <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.625rem' }}>{n.zone}</span>
               </div>
@@ -233,7 +234,7 @@ export default function RouteForm({ onRouteResult }) {
                 onMouseEnter={(e) => e.target.style.background = 'var(--surface-alt)'}
                 onMouseLeave={(e) => e.target.style.background = 'var(--white)'}
               >
-                {n.isLandmark && <span style={{ marginRight: 6 }}>{n.icon || '📍'}</span>}
+                <span style={{ marginRight: 6, display: 'inline-flex', verticalAlign: 'middle' }}>{getResultIcon(n)}</span>
                 <strong>{n.name}</strong>
                 <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.625rem' }}>{n.zone}</span>
               </div>
@@ -262,16 +263,22 @@ export default function RouteForm({ onRouteResult }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 2,
+                gap: 4,
                 opacity: loading ? 0.6 : 1,
                 cursor: loading ? 'wait' : 'pointer',
               }}
             >
-              <span style={{ fontSize: '1.1rem' }}>{m.icon}</span>
+              <span style={{ display: 'inline-flex' }}>{getModeIcon(m.key, 20)}</span>
               <span style={{ letterSpacing: '0.02em' }}>{m.label.split(' ')[0]}</span>
             </button>
           ))}
         </div>
+      </div>
+
+      <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2px 0' }}>
+        {!['car','motorcycle'].includes(mode)
+          ? 'A pie/bici puedes ir en cualquier dirección'
+          : 'En carro/moto respeta el sentido de las calles'}
       </div>
 
       <div>
@@ -296,9 +303,14 @@ export default function RouteForm({ onRouteResult }) {
                 borderColor: routeType === opt.key ? opt.color : 'var(--border)',
                 opacity: loading ? 0.6 : 1,
                 cursor: loading ? 'wait' : 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
-              {loading && routeType === opt.key ? '...' : opt.label}
+              <span style={{ display: 'inline-flex' }}>{getRouteTypeIcon(opt.key, 18)}</span>
+              <span>{loading && routeType === opt.key ? '...' : opt.label}</span>
             </button>
           ))}
         </div>
@@ -322,7 +334,7 @@ export default function RouteForm({ onRouteResult }) {
         disabled={loading}
         style={{ width: '100%', opacity: loading ? 0.7 : 1, fontSize: '0.75rem' }}
       >
-        {loading ? 'Calculando...' : `Calcular Ruta ${MODES.find(m => m.key === mode)?.icon || ''}`}
+        {loading ? 'Calculando...' : `Calcular Ruta`}
       </button>
 
       {selectedOrigin && selectedDest && (

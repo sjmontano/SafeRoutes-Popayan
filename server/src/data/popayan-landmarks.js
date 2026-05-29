@@ -337,7 +337,7 @@ const LANDMARKS = [
   },
   {
     "id": "lm_galeria_esmeralda",
-    "name": "Galería La Esmeralda",
+    "name": "Galería Barrio La Esmeralda",
     "category": "comercio",
     "address": "Mercado público, Barrio La Esmeralda",
     "lat": 2.44449,
@@ -598,9 +598,9 @@ const LANDMARKS = [
     "id": "lm_la_esmeralda",
     "name": "Barrio La Esmeralda",
     "category": "barrio",
-    "lat": 2.44449,
-    "lng": -76.61543,
-    "nodeId": "n1007"
+    "lat": 2.44378,
+    "lng": -76.61578,
+    "nodeId": "n1000"
   },
   {
     "id": "lm_alfonso_lopez",
@@ -821,21 +821,21 @@ const LANDMARKS = [
 ];
 
 const CATEGORY_ICONS = {
-  "turismo": "🏛️",
-  "cultura": "🎭",
-  "restaurante": "🍽️",
-  "hotel": "🏨",
-  "comercio": "🛍️",
-  "transporte": "🚌",
-  "salud": "🏥",
-  "educacion": "🎓",
-  "gobierno": "🏛",
-  "deporte": "⚽",
-  "parque": "🌳",
-  "banco": "🏦",
-  "barrio": "🏘️",
-  "religion": "⛪",
-  "entierro": "🪦"
+  "turismo": "IconBuildingMonument",
+  "cultura": "IconMasksTheater",
+  "restaurante": "IconRestaurant",
+  "hotel": "IconBuilding",
+  "comercio": "IconBuildingStore",
+  "transporte": "IconBus",
+  "salud": "IconHeartPlus",
+  "educacion": "IconSchool",
+  "gobierno": "IconBuildingGovernment",
+  "deporte": "IconBallFootball",
+  "parque": "IconTree",
+  "banco": "IconBuildingBank",
+  "barrio": "IconBuildings",
+  "religion": "IconChurch",
+  "entierro": "IconCross"
 };
 
 const CATEGORY_LABELS = {

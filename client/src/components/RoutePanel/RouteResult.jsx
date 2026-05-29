@@ -1,3 +1,5 @@
+import { getModeIcon } from '../../utils/icons';
+
 function getRiskLabel(weight) {
   if (weight < 0.3) return { text: 'BAJO', color: 'var(--green)' };
   if (weight < 0.5) return { text: 'MEDIO', color: 'var(--warning)' };
@@ -53,7 +55,7 @@ export default function RouteResult({ result }) {
         color: 'var(--white)',
         fontSize: '0.6875rem',
       }}>
-        <span>{modeMeta.icon}</span>
+        <span style={{ display: 'inline-flex' }}>{getModeIcon(result.mode, 18)}</span>
         <span style={{ fontWeight: 700, letterSpacing: '0.04em' }}>{modeMeta.label}</span>
       </div>
 

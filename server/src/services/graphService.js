@@ -6,13 +6,13 @@ for (const n of NODES) {
   NODE_MAP[n.id] = n;
 }
 
-function edgeDirectDistance(edge) {
+function edgeDistanceKm(edge) {
   const a = NODE_MAP[edge.from];
   const b = NODE_MAP[edge.to];
   if (!a || !b) return 0.0008;
   const dlat = b.lat - a.lat;
   const dlng = b.lng - a.lng;
-  return Math.sqrt(dlat * dlat + dlng * dlng);
+  return Math.sqrt(dlat * dlat + dlng * dlng) * 111.32;
 }
 
 const DEFAULT_WEIGHTS = {
@@ -93,20 +93,26 @@ function computeSafetyWeight(edge) {
 }
 
 export function calculateEdgeWeight(edge, type = 'safest') {
+  const distKm = edgeDistanceKm(edge);
+
   if (type === 'fastest') {
-    return edgeDirectDistance(edge) * 100;
+    return distKm * 100;
   }
-  if (type === 'balanced') {
-    const safety = computeSafetyWeight(edge);
-    const dist = edgeDirectDistance(edge) * 100;
-    return 0.6 * safety + 0.4 * dist;
-  }
+
   const safety = computeSafetyWeight(edge);
-  return safety + edgeDirectDistance(edge) * 0.01;
+
+  if (type === 'balanced') {
+    return safety + distKm * 10;
+  }
+
+  return Math.pow(safety, 3) + distKm * 0.05;
 }
 
-export function buildGraph(routeType = 'safest') {
+const ONE_WAY_AWARE_MODES = ['car', 'motorcycle'];
+
+export function buildGraph(routeType = 'safest', mode = 'walking') {
   const graph = new Graph();
+  const oneWayAware = ONE_WAY_AWARE_MODES.includes(mode);
 
   for (const node of NODES) {
     graph.addNode(node.id, {
@@ -117,10 +123,28 @@ export function buildGraph(routeType = 'safest') {
     });
   }
 
+  const addedPair = new Set();
+
   for (const edge of EDGES) {
     if (!graph.nodes.has(edge.from) || !graph.nodes.has(edge.to)) continue;
+
+    const pairKey = [edge.from, edge.to].sort().join('|');
+    if (addedPair.has(pairKey)) continue;
+    addedPair.add(pairKey);
+
     const weight = calculateEdgeWeight(edge, routeType);
     graph.addEdge(edge.id, edge.from, edge.to, weight, { name: edge.name });
+
+    if (!oneWayAware) {
+      const reverseId = edge.id.replace(/(\d+)$/, (_, n) => `r${n}`);
+      graph.addEdge(reverseId, edge.to, edge.from, weight, { name: edge.name });
+    } else {
+      const reverse = EDGES.find(e => e.from === edge.to && e.to === edge.from);
+      if (reverse) {
+        const rw = calculateEdgeWeight(reverse, routeType);
+        graph.addEdge(reverse.id, reverse.from, reverse.to, rw, { name: reverse.name });
+      }
+    }
   }
 
   return graph;

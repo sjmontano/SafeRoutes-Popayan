@@ -110,7 +110,7 @@ router.post('/route/calculate', async (req, res) => {
     const validTypes = ['safest', 'fastest', 'balanced'];
     const routeType = validTypes.includes(type) ? type : 'safest';
 
-    const graph = buildGraph(routeType);
+    const graph = buildGraph(routeType, mode);
     const result = await computePath(from, to, mode, routeType, graph);
 
     if (!result) {
@@ -127,7 +127,7 @@ router.post('/route/safest', async (req, res) => {
   try {
     const { from, to, mode = 'walking' } = req.body;
     if (!from || !to) return res.status(400).json({ error: 'Origen y destino requeridos' });
-    const graph = buildGraph('safest');
+    const graph = buildGraph('safest', mode);
     const result = await computePath(from, to, mode, 'safest', graph);
     if (!result) return res.status(404).json({ error: 'No hay ruta disponible' });
     res.json(result);
@@ -140,7 +140,7 @@ router.post('/route/fastest', async (req, res) => {
   try {
     const { from, to, mode = 'walking' } = req.body;
     if (!from || !to) return res.status(400).json({ error: 'Origen y destino requeridos' });
-    const graph = buildGraph('fastest');
+    const graph = buildGraph('fastest', mode);
     const result = await computePath(from, to, mode, 'fastest', graph);
     if (!result) return res.status(404).json({ error: 'No hay ruta disponible' });
     res.json(result);
@@ -153,7 +153,7 @@ router.post('/route/balanced', async (req, res) => {
   try {
     const { from, to, mode = 'walking' } = req.body;
     if (!from || !to) return res.status(400).json({ error: 'Origen y destino requeridos' });
-    const graph = buildGraph('balanced');
+    const graph = buildGraph('balanced', mode);
     const result = await computePath(from, to, mode, 'balanced', graph);
     if (!result) return res.status(404).json({ error: 'No hay ruta disponible' });
     res.json(result);
