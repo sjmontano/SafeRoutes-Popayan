@@ -1,53 +1,223 @@
-function coord(calle, carrera) {
-  const lat = 2.43850 + calle * 0.00075;
-  const lng = -76.60350 - carrera * 0.00082;
-  return { lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 };
+import { readFileSync } from 'fs';
+
+const raw = JSON.parse(readFileSync('src/data/popayan-streets.geojson', 'utf8'));
+
+const coordKey = (lat, lng) => `${lat.toFixed(6)},${lng.toFixed(6)}`;
+const nodeMap = new Map();
+const NODES = [];
+let nodeIdCounter = 0;
+
+function getOrCreateNode(lat, lng) {
+  const key = coordKey(lat, lng);
+  if (nodeMap.has(key)) return nodeMap.get(key);
+  const id = `n${nodeIdCounter++}`;
+  const node = { id, lat, lng };
+  nodeMap.set(key, id);
+  NODES.push(node);
+  return id;
 }
 
-function zoneFor(carrera, calle) {
-  if (carrera >= 1 && carrera <= 7 && calle >= 0 && calle <= 14) return 'Centro Histórico';
-  if (carrera >= 8 && carrera <= 13 && calle >= 0 && calle <= 16) return 'La Pamba';
-  if (carrera >= 11 && carrera <= 17 && calle >= 0 && calle <= 18) return 'Modelo';
-  if (carrera >= 1 && carrera <= 5 && calle >= 15 && calle <= 28) return 'El Cadillal';
-  if (carrera >= 5 && carrera <= 11 && calle >= 16 && calle <= 32) return 'Campo Bello';
-  if (carrera >= 0 && carrera <= 2 && calle >= 0 && calle <= 12) return 'El Empedrado';
-  if (carrera >= 12 && carrera <= 18 && calle >= 0 && calle <= 14) return 'La Esmeralda';
-  if (carrera >= 16 && carrera <= 21 && calle >= 6 && calle <= 26) return 'Bello Horizonte';
-  if (carrera >= 7 && carrera <= 13 && calle >= 16 && calle <= 27) return 'María Occidente';
-  if (carrera >= 14 && carrera <= 19 && calle >= 14 && calle <= 24) return 'Prados del Norte';
-  if (carrera >= 0 && carrera <= 4 && calle >= -4 && calle <= -1) return 'Pandiguando';
-  if (carrera >= 8 && carrera <= 14 && calle >= -4 && calle <= -1) return 'Las Ferias';
-  return 'Centro Histórico';
+function getZone(lat, lng) {
+  const cx = 2.44170, cy = -76.60640;
+  const dy = (lat - cx) / 0.00075;
+  const dx = (lng - cy) / -0.00082;
+  const cl = Math.round(dy + 5);
+  const c = Math.round(dx + 6);
+
+  if (cl >= -2 && cl <= 12 && c >= 1 && c <= 7) return { name: 'Centro Histórico', id: 'centro_historico', risk: 0.30, commerce: 0.95, police: 0.90, cai: true, illum: 0.85 };
+  if (cl <= -2 && c >= 1 && c <= 8) return { name: 'Pandiguando/Bolívar (ALTO RIESGO)', id: 'comuna_6', risk: 0.75, commerce: 0.25, police: 0.20, cai: false, illum: 0.25 };
+  if (cl <= -2 && c >= 8 && c <= 16) return { name: 'La Esmeralda (ALTO RIESGO)', id: 'comuna_7', risk: 0.78, commerce: 0.28, police: 0.22, cai: false, illum: 0.28 };
+  if (cl >= 15 && cl <= 35 && c >= 14 && c <= 22) return { name: 'Alfonso López (ALTO RIESGO)', id: 'comuna_8', risk: 0.80, commerce: 0.20, police: 0.15, cai: false, illum: 0.20 };
+  if (cl >= 22 && cl <= 38 && c >= 14 && c <= 22) return { name: 'Sur Occidente (ALTO RIESGO)', id: 'comuna_9', risk: 0.72, commerce: 0.30, police: 0.25, cai: false, illum: 0.30 };
+  if (cl >= 0 && cl <= 8 && c >= 0 && c <= 2) return { name: 'El Empedrado', id: 'empedrado', risk: 0.42, commerce: 0.45, police: 0.38, cai: false, illum: 0.35 };
+  if (cl >= -1 && cl <= 15 && c >= 7 && c <= 13) return { name: 'La Pamba', id: 'la_pamba', risk: 0.52, commerce: 0.50, police: 0.40, cai: false, illum: 0.45 };
+  if (cl >= 22 && cl <= 40 && c >= 3 && c <= 14) return { name: 'Bello Horizonte', id: 'bello_horizonte', risk: 0.55, commerce: 0.45, police: 0.38, cai: false, illum: 0.42 };
+  if (cl >= 25 && cl <= 42 && c >= 6 && c <= 14) return { name: 'Campo Bello', id: 'campo_bello', risk: 0.60, commerce: 0.35, police: 0.30, cai: false, illum: 0.35 };
+  if (cl >= 16 && cl <= 28 && c >= 3 && c <= 15) return { name: 'Prados Norte/Modelo', id: 'comuna_1n', risk: 0.48, commerce: 0.65, police: 0.55, cai: true, illum: 0.65 };
+  return { name: 'Popayán Urbano', id: 'urbano', risk: 0.50, commerce: 0.55, police: 0.45, cai: false, illum: 0.50 };
 }
 
-const BARRIO_NAMES = {
-  'Centro Histórico': 'Centro Histórico',
-  'La Pamba': 'La Pamba',
-  'Modelo': 'Modelo',
-  'Campo Bello': 'Campo Bello',
-  'El Empedrado': 'El Empedrado',
-  'El Cadillal': 'El Cadillal',
-  'La Esmeralda': 'La Esmeralda',
-  'Bello Horizonte': 'Bello Horizonte',
-  'María Occidente': 'María Occidente',
-  'Prados del Norte': 'Prados del Norte',
-  'Pandiguando': 'Pandiguando',
-  'Las Ferias': 'Las Ferias',
-};
+function isValidStreet(name) {
+  if (!name || name.trim() === '') return false;
+  const n = name.toLowerCase();
+  return n.includes('calle') || n.includes('carrera') || n.includes('cra ') || n.includes('cra.') ||
+         n.includes('avenida') || n.includes('via ') || n.includes('vía ') || n.includes('diagonal') ||
+         n.includes('transversal') || n.includes('circunvalar') || n.includes('variante') ||
+         n.includes('autopista') || n.includes('camino');
+}
+
+function normalizeStreetName(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/^carrera\s+/i, 'cra ')
+    .replace(/^cra\.\s*/i, 'cra ')
+    .replace(/^calle\s+/i, 'calle ')
+    .replace(/^avenida\s+/i, 'av ')
+    .replace(/^diagonal\s+/i, 'dg ')
+    .replace(/^transversal\s+/i, 'tv ')
+    .replace(/^circunvalar\s+/i, 'circunvalar ')
+    .replace(/^variante\s+/i, 'variante ')
+    .replace(/^autopista\s+/i, 'autopista ')
+    .replace(/^camino\s+/i, 'camino ')
+    .replace(/^via\s+/i, 'via ')
+    .replace(/^vía\s+/i, 'via ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function makeIntersectionKey(street1, street2) {
+  return `${normalizeStreetName(street1)} & ${normalizeStreetName(street2)}`;
+}
+
+function displayIntersectionName(street1, street2) {
+  const format = (s) => {
+    let str = s.trim();
+    if (str.toLowerCase().startsWith('cra')) str = 'Cra' + str.slice(3);
+    else if (str.toLowerCase().startsWith('carrera')) str = 'Carrera' + str.slice(7);
+    else str = str.charAt(0).toUpperCase() + str.slice(1);
+    return str;
+  };
+
+  const a = format(street1);
+  const b = format(street2);
+
+  const aIsCalle = a.toLowerCase().startsWith('calle') || a.toLowerCase().startsWith('dg') || a.toLowerCase().startsWith('tv');
+  const bIsCalle = b.toLowerCase().startsWith('calle') || b.toLowerCase().startsWith('dg') || b.toLowerCase().startsWith('tv');
+
+  if (aIsCalle && !bIsCalle) return `${a} × ${b}`;
+  if (!aIsCalle && bIsCalle) return `${b} × ${a}`;
+  if (aIsCalle && bIsCalle) {
+    const nA = parseInt(a.replace(/\D/g, '')) || 0;
+    const nB = parseInt(b.replace(/\D/g, '')) || 0;
+    return nA <= nB ? `${a} × ${b}` : `${b} × ${a}`;
+  }
+  return `${a} × ${b}`;
+}
+
+const EDGES = [];
+let ec = 0;
+
+const FILTERED_HIGHWAYS = new Set(['service', 'track']);
+
+for (const feat of raw.features) {
+  if (!feat.geometry || feat.geometry.type !== 'LineString') continue;
+  const hw = feat.properties?.highway || '';
+  if (FILTERED_HIGHWAYS.has(hw)) continue;
+
+  const name = feat.properties?.name || '';
+  const isNamed = name && name.trim() !== '';
+
+  if (hw === 'residential' && !isNamed) continue;
+  if ((hw === 'footway' || hw === 'path' || hw === 'steps' || hw === 'cycleway' || hw === 'pedestrian') && !isNamed) continue;
+  if (hw === 'unclassified' && !isNamed) continue;
+
+  const coords = feat.geometry.coordinates;
+  const highway = feat.properties?.highway || '';
+
+  const simplified = [coords[0]];
+  for (let i = 1; i < coords.length - 1; i++) {
+    const prev = simplified[simplified.length - 1];
+    const next = coords[i + 1];
+    const curr = coords[i];
+    const d1 = Math.hypot(curr[0] - prev[0], curr[1] - prev[1]);
+    const d2 = Math.hypot(next[0] - curr[0], next[1] - curr[1]);
+    if (d1 < 0.00003 || d2 < 0.00003) continue;
+    simplified.push(curr);
+  }
+  simplified.push(coords[coords.length - 1]);
+
+  for (let i = 0; i < simplified.length - 1; i++) {
+    const [lng1, lat1] = simplified[i];
+    const [lng2, lat2] = simplified[i + 1];
+    const from = getOrCreateNode(lat1, lng1);
+    const to = getOrCreateNode(lat2, lng2);
+    ec++;
+    const label = name || highway;
+    EDGES.push({ id: `e${ec}`, from, to, name: label, highway });
+    ec++;
+    EDGES.push({ id: `e${ec}`, from: to, to: from, name: label, highway });
+  }
+}
+
+const nodeStreets = new Map();
+for (const edge of EDGES) {
+  if (!edge.name || !isValidStreet(edge.name)) continue;
+  for (const nodeId of [edge.from, edge.to]) {
+    if (!nodeStreets.has(nodeId)) nodeStreets.set(nodeId, new Set());
+    nodeStreets.get(nodeId).add(edge.name);
+  }
+}
+
+const INTERSECTION_INDEX = new Map();
+const STREET_INDEX = new Map();
+
+for (const n of NODES) {
+  const z = getZone(n.lat, n.lng);
+  n.zone = z.name;
+  n.zoneId = z.id;
+
+  const streets = nodeStreets.get(n.id);
+  if (streets && streets.size >= 2) {
+    const names = [...streets];
+    const best = [...names].sort((a, b) => {
+      const aOk = isValidStreet(a) ? 0 : 1;
+      const bOk = isValidStreet(b) ? 0 : 1;
+      if (aOk !== bOk) return aOk - bOk;
+      return b.length - a.length;
+    });
+    const mainPair = best.slice(0, 2);
+    n.name = displayIntersectionName(mainPair[0], mainPair[1]);
+
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        if (!isValidStreet(names[i]) || !isValidStreet(names[j])) continue;
+        const key1 = makeIntersectionKey(names[i], names[j]);
+        const key2 = makeIntersectionKey(names[j], names[i]);
+        const entry = {
+          nodeId: n.id,
+          name: displayIntersectionName(names[i], names[j]),
+          lat: n.lat,
+          lng: n.lng,
+          zone: n.zone,
+        };
+        if (!INTERSECTION_INDEX.has(key1)) INTERSECTION_INDEX.set(key1, []);
+        INTERSECTION_INDEX.get(key1).push(entry);
+        if (key1 !== key2) {
+          if (!INTERSECTION_INDEX.has(key2)) INTERSECTION_INDEX.set(key2, []);
+          INTERSECTION_INDEX.get(key2).push(entry);
+        }
+      }
+    }
+  } else if (streets && streets.size === 1) {
+    n.name = [...streets][0];
+  } else {
+    n.name = `Intersección #${n.id.slice(1)}`;
+  }
+
+  if (streets) {
+    for (const street of streets) {
+      if (!isValidStreet(street)) continue;
+      const norm = normalizeStreetName(street);
+      const entry = { nodeId: n.id, name: n.name, lat: n.lat, lng: n.lng, zone: n.zone, street };
+      if (!STREET_INDEX.has(norm)) STREET_INDEX.set(norm, []);
+      STREET_INDEX.get(norm).push(entry);
+    }
+  }
+}
 
 const ZONES = [
   { id: 'centro_historico', name: 'Centro Histórico', riskLevel: 0.30, commercePresence: 0.95, policePresence: 0.90, caiNearby: true, illumination: 0.85 },
-  { id: 'la_pamba', name: 'La Pamba', riskLevel: 0.50, commercePresence: 0.55, policePresence: 0.45, caiNearby: false, illumination: 0.50 },
-  { id: 'modelo', name: 'Modelo', riskLevel: 0.55, commercePresence: 0.65, policePresence: 0.55, caiNearby: true, illumination: 0.60 },
-  { id: 'campo_bello', name: 'Campo Bello', riskLevel: 0.72, commercePresence: 0.30, policePresence: 0.25, caiNearby: false, illumination: 0.30 },
-  { id: 'el_empedrado', name: 'El Empedrado', riskLevel: 0.42, commercePresence: 0.45, policePresence: 0.38, caiNearby: false, illumination: 0.35 },
-  { id: 'el_cadillal', name: 'El Cadillal', riskLevel: 0.60, commercePresence: 0.48, policePresence: 0.40, caiNearby: false, illumination: 0.45 },
-  { id: 'la_esmeralda', name: 'La Esmeralda', riskLevel: 0.65, commercePresence: 0.42, policePresence: 0.35, caiNearby: false, illumination: 0.40 },
-  { id: 'bello_horizonte', name: 'Bello Horizonte', riskLevel: 0.78, commercePresence: 0.20, policePresence: 0.18, caiNearby: false, illumination: 0.25 },
-  { id: 'maria_occidente', name: 'María Occidente', riskLevel: 0.58, commercePresence: 0.50, policePresence: 0.42, caiNearby: false, illumination: 0.48 },
-  { id: 'prados_norte', name: 'Prados del Norte', riskLevel: 0.45, commercePresence: 0.55, policePresence: 0.50, caiNearby: true, illumination: 0.55 },
-  { id: 'pandiguando', name: 'Pandiguando', riskLevel: 0.70, commercePresence: 0.25, policePresence: 0.22, caiNearby: false, illumination: 0.28 },
-  { id: 'las_ferias', name: 'Las Ferias', riskLevel: 0.62, commercePresence: 0.50, policePresence: 0.40, caiNearby: false, illumination: 0.45 },
+  { id: 'comuna_6', name: 'Pandiguando/Bolívar (ALTO RIESGO)', riskLevel: 0.75, commercePresence: 0.25, policePresence: 0.20, caiNearby: false, illumination: 0.25 },
+  { id: 'comuna_7', name: 'La Esmeralda (ALTO RIESGO)', riskLevel: 0.78, commercePresence: 0.28, policePresence: 0.22, caiNearby: false, illumination: 0.28 },
+  { id: 'comuna_8', name: 'Alfonso López (ALTO RIESGO)', riskLevel: 0.80, commercePresence: 0.20, policePresence: 0.15, caiNearby: false, illumination: 0.20 },
+  { id: 'comuna_9', name: 'Sur Occidente (ALTO RIESGO)', riskLevel: 0.72, commercePresence: 0.30, policePresence: 0.25, caiNearby: false, illumination: 0.30 },
+  { id: 'empedrado', name: 'El Empedrado', riskLevel: 0.42, commercePresence: 0.45, policePresence: 0.38, caiNearby: false, illumination: 0.35 },
+  { id: 'la_pamba', name: 'La Pamba', riskLevel: 0.52, commercePresence: 0.50, policePresence: 0.40, caiNearby: false, illumination: 0.45 },
+  { id: 'bello_horizonte', name: 'Bello Horizonte', riskLevel: 0.55, commercePresence: 0.45, policePresence: 0.38, caiNearby: false, illumination: 0.42 },
+  { id: 'campo_bello', name: 'Campo Bello', riskLevel: 0.60, commercePresence: 0.35, policePresence: 0.30, caiNearby: false, illumination: 0.35 },
+  { id: 'comuna_1n', name: 'Prados Norte/Modelo', riskLevel: 0.48, commercePresence: 0.65, policePresence: 0.55, caiNearby: true, illumination: 0.65 },
+  { id: 'urbano', name: 'Popayán Urbano', riskLevel: 0.50, commercePresence: 0.55, policePresence: 0.45, caiNearby: false, illumination: 0.50 },
 ];
 
 const REPORT_TYPES = {
@@ -57,95 +227,26 @@ const REPORT_TYPES = {
   SOSPECHOSO: { label: 'Actividad Sospechosa', baseWeight: 0.7, color: '#F59E0B' },
   ACCIDENTE: { label: 'Accidente Vial', baseWeight: 0.4, color: '#3B82F6' },
   OTRO: { label: 'Otro Incidente', baseWeight: 0.5, color: '#6B7280' },
+  HOMICIDIO: { label: 'Homicidio', baseWeight: 1.0, color: '#000000' },
+  VIOLENCIA: { label: 'Violencia Intrafamiliar', baseWeight: 0.7, color: '#7C3AED' },
+  DELITO_SEXUAL: { label: 'Delito Sexual', baseWeight: 0.95, color: '#991B1B' },
+  MICROTRAFICO: { label: 'Microtráfico', baseWeight: 0.8, color: '#B45309' },
 };
 
-const MIN_CALLE = -4;
-const MAX_CALLE = 33;
-const MIN_CARRERA = 0;
-const MAX_CARRERA = 22;
-
-const NODES = [];
-const nodeMap = {};
-
-function nodeId(calle, carrera) {
-  return `n_${calle}_${carrera}`;
-}
-
-function nodeName(calle, carrera) {
-  const calleName = calle === 0 ? 'Calle 0' : calle > 0 ? `Calle ${calle}` : `Calle ${Math.abs(calle)} Sur`;
-  const carreraName = carrera === 0 ? 'Cra 0' : `Cra ${carrera}`;
-  return `${calleName} con ${carreraName}`;
-}
-
-for (let calle = MIN_CALLE; calle <= MAX_CALLE; calle++) {
-  for (let carrera = MIN_CARRERA; carrera <= MAX_CARRERA; carrera++) {
-    const { lat, lng } = coord(calle, carrera);
-    const zone = zoneFor(carrera, calle);
-    const id = nodeId(calle, carrera);
-    const name = nodeName(calle, carrera);
-
-    NODES.push({ id, calle, carrera, name, lat, lng, zone });
-    nodeMap[id] = { calle, carrera, lat, lng, zone };
-  }
-}
-
-const EDGES = [];
-let edgeCounter = 0;
-
-function addEdge(fromId, toId) {
-  const a = nodeMap[fromId];
-  const b = nodeMap[toId];
-  if (!a || !b) return;
-  edgeCounter++;
-  EDGES.push({
-    id: `e${String(edgeCounter).padStart(5, '0')}`,
-    from: fromId,
-    to: toId,
-    name: `${a.calle !== b.calle ? nodeName(a.calle, a.carrera) : ''} ${a.calle !== b.calle ? '→' : '↓'} ${nodeName(b.calle, b.carrera)}`,
-  });
-}
-
-for (let calle = MIN_CALLE; calle <= MAX_CALLE; calle++) {
-  for (let carrera = MIN_CARRERA; carrera < MAX_CARRERA; carrera++) {
-    addEdge(nodeId(calle, carrera), nodeId(calle, carrera + 1));
-    addEdge(nodeId(calle, carrera + 1), nodeId(calle, carrera));
-  }
-}
-
-for (let carrera = MIN_CARRERA; carrera <= MAX_CARRERA; carrera++) {
-  for (let calle = MIN_CALLE; calle < MAX_CALLE; calle++) {
-    addEdge(nodeId(calle, carrera), nodeId(calle + 1, carrera));
-    addEdge(nodeId(calle + 1, carrera), nodeId(calle, carrera));
-  }
-}
-
 function getZoneForNode(nodeId) {
-  const node = NODES.find((n) => n.id === nodeId);
-  if (!node) return ZONES[0];
-  return ZONES.find((z) => z.name === node.zone) || ZONES[0];
-}
-
-function getZoneId(nodeId) {
-  const node = NODES.find((n) => n.id === nodeId);
-  if (!node) return 'centro_historico';
-  const zone = ZONES.find((z) => z.name === node.zone);
-  return zone ? zone.id : 'centro_historico';
+  const n = NODES.find(x => x.id === nodeId);
+  if (!n) return ZONES[0];
+  return ZONES.find(z => z.name === n.zone) || ZONES[0];
 }
 
 const landmarkNodes = {
-  parque_caldas: nodeId(9, 6),
-  torre_reloj: nodeId(10, 7),
-  puente_humilladero: nodeId(3, 2),
-  universidad_cauca: nodeId(8, 5),
-  terminal_transportes: nodeId(24, 18),
-  centro_comercial: nodeId(13, 10),
-  aeropuerto: nodeId(30, 4),
-  hospital: nodeId(15, 7),
-  coliseo: nodeId(20, 15),
-  estadio: nodeId(22, 11),
+  parque_caldas: 'n0',
 };
 
 console.log(`Generated ${NODES.length} nodes, ${EDGES.length} edges, ${ZONES.length} zones`);
-console.log(`Landmarks: ${Object.keys(landmarkNodes).join(', ')}`);
+console.log(`Search index: ${INTERSECTION_INDEX.size} intersections, ${STREET_INDEX.size} streets`);
 
-export { NODES, EDGES, ZONES, REPORT_TYPES, getZoneForNode, getZoneId, landmarkNodes };
+const sampleNamed = NODES.filter(n => n.name && !n.name.startsWith('Intersección')).slice(0, 10);
+console.log('Sample named nodes:', sampleNamed.map(n => n.name));
+
+export { NODES, EDGES, ZONES, REPORT_TYPES, getZoneForNode, landmarkNodes, INTERSECTION_INDEX, STREET_INDEX, normalizeStreetName };
