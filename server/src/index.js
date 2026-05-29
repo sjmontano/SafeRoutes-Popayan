@@ -37,5 +37,5 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/reports`);
   console.log(`  POST /api/reports`);
   console.log(`  GET  /api/reports/heatmap`);
-  console.log(`  GET  /api/search/nodes`);
+  console.log(`  GET  /api/search`);
 });
