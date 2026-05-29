@@ -257,4 +257,4 @@ function normalizeStreetName(name) {
 
 console.log(`Graph ready: ${NODES.length} nodes, ${EDGES.length} edges, ${INTERSECTION_INDEX.size} intersections`);
 
-export { NODES, EDGES, ZONES, REPORT_TYPES, getZoneForNode, landmarkNodes, INTERSECTION_INDEX, STREET_INDEX, normalizeStreetName };
+export { NODES, EDGES, ZONES, REPORT_TYPES, getZoneForNode, landmarkNodes, INTERSECTION_INDEX, STREET_INDEX, normalizeStreetName, NODE_MAP };

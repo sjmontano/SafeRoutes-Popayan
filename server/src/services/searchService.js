@@ -1,9 +1,6 @@
-import { INTERSECTION_INDEX, STREET_INDEX, NODES, EDGES, ZONES, normalizeStreetName } from '../data/generate-popayan.js';
+import { INTERSECTION_INDEX, STREET_INDEX, NODES, EDGES, ZONES, normalizeStreetName, NODE_MAP } from '../data/generate-popayan.js';
 import { CATEGORY_ICONS, CATEGORY_LABELS, searchLandmarks } from '../data/popayan-landmarks.js';
 import { searchAddress } from './nominatimService.js';
-
-const NODE_MAP = {};
-for (const n of NODES) NODE_MAP[n.id] = n;
 
 const ZONE_INDEX = [];
 for (const z of ZONES) {
@@ -174,17 +171,21 @@ function lookupPartialStreet(query) {
 
 function lookupLandmarks(query) {
   const q = sanitize(query);
-  return searchLandmarks(q).slice(0, 8).map((l) => ({
-    id: l.id,
-    name: l.name,
-    zone: CATEGORY_LABELS[l.category] || l.category,
-    lat: l.lat,
-    lng: l.lng,
-    icon: CATEGORY_ICONS[l.category] || '📍',
-    isLandmark: true,
-    landmarkId: l.id,
-    category: l.category,
-  }));
+  return searchLandmarks(q).slice(0, 8).map((l) => {
+    const node = l.nodeId && NODE_MAP[l.nodeId];
+    const displayName = l.address ? `${l.name} (${l.address})` : l.name;
+    return {
+      id: node ? l.nodeId : l.id,
+      name: displayName,
+      zone: node ? node.zone : (CATEGORY_LABELS[l.category] || l.category),
+      lat: node ? node.lat : l.lat,
+      lng: node ? node.lng : l.lng,
+      icon: CATEGORY_ICONS[l.category] || '📍',
+      isLandmark: true,
+      landmarkId: l.id,
+      category: l.category,
+    };
+  });
 }
 
 function lookupZones(query) {
@@ -261,7 +262,7 @@ async function nominatimFallback(query) {
       return {
         id: snapped ? snapped.nodeId : NODES[0]?.id || 'n0',
         name: addr.name,
-        zone: addr.type || '',
+        zone: snapped ? snapped.node.zone : (addr.type || ''),
         lat: addr.lat,
         lng: addr.lng,
         icon: addr.icon || '📍',
@@ -313,11 +314,13 @@ export async function unifiedSearch(query) {
   const landmarks = lookupLandmarks(q);
   if (landmarks.length > 0) {
     for (const lm of landmarks) {
+      if (lm.landmarkId && NODE_MAP[lm.id]) continue;
       const snapped = snapToNearestEdge(lm.lat, lm.lng);
       if (snapped) {
         lm.id = snapped.nodeId;
         lm.lat = snapped.node.lat;
         lm.lng = snapped.node.lng;
+        lm.zone = snapped.node.zone;
       }
     }
     results.push(...landmarks);
