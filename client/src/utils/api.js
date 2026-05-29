@@ -1,4 +1,4 @@
-const API = 'http://localhost:3001/api';
+const API = 'https://saferoutes-popayan.onrender.com/api';
 
 export async function fetchGraphData() {
   const res = await fetch(`${API}/graph`);
