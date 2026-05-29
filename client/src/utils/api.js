@@ -1,4 +1,6 @@
-const API = '/api';
+const API = import.meta.env.DEV
+  ? '/api'
+  : 'https://saferoutes-popayan.onrender.com/api';
 
 export async function fetchGraphData() {
   const res = await fetch(`${API}/graph`);
@@ -36,12 +38,8 @@ export async function fetchTraffic() {
 }
 
 export async function search(query) {
-  const url = `${API}/search?q=${encodeURIComponent(query)}`;
-  console.log('[api search]', url);
-  const res = await fetch(url);
-  const data = await res.json();
-  console.log('[api search] response:', data?.length || 0, 'items, status:', res.status);
-  return data;
+  const res = await fetch(`${API}/search?q=${encodeURIComponent(query)}`);
+  return res.json();
 }
 
 export async function calculateRoute(type, from, to, extra = {}) {
