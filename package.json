@@ -1,0 +1,16 @@
+{
+  "name": "saferoutes-popayan",
+  "version": "1.0.0",
+  "description": "Rutas seguras en Popayán usando teoría de grafos",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "db:setup": "psql -U postgres -f database/schema.sql && psql -U postgres -f database/seed.sql"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
