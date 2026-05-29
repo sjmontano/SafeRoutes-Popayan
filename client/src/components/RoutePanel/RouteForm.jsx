@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  searchNodes,
+  search,
   calculateRoute,
   fetchHourFactor,
   fetchTraffic,
@@ -82,15 +82,19 @@ export default function RouteForm({ onRouteResult }) {
   const handleSearchOrigin = async (q) => {
     setOrigin(q);
     if (q.length < 2) { setOriginResults([]); return; }
-    const results = await searchNodes(q);
-    setOriginResults(results);
+    try {
+      const results = await search(q);
+      setOriginResults(Array.isArray(results) ? results : []);
+    } catch { setOriginResults([]); }
   };
 
   const handleSearchDest = async (q) => {
     setDest(q);
     if (q.length < 2) { setDestResults([]); return; }
-    const results = await searchNodes(q);
-    setDestResults(results);
+    try {
+      const results = await search(q);
+      setDestResults(Array.isArray(results) ? results : []);
+    } catch { setDestResults([]); }
   };
 
   const handleCalculate = () => {
@@ -158,26 +162,26 @@ export default function RouteForm({ onRouteResult }) {
 
       <div style={{ position: 'relative' }}>
         <label className="eyebrow" style={{ display: 'block', marginBottom: 4 }}>Origen</label>
-        <input
-          placeholder="Buscar intersección..."
-          value={origin}
-          onChange={(e) => handleSearchOrigin(e.target.value)}
-          style={{ width: '100%' }}
-        />
-        {originResults.length > 0 && (
-          <div style={{
+          <input
+            placeholder="Buscar lugar, restaurante, hotel..."
+            value={origin}
+            onChange={(e) => handleSearchOrigin(e.target.value)}
+            style={{ width: '100%' }}
+          />
+          {originResults.length > 0 && (
+            <div style={{
             position: 'absolute',
             zIndex: 10,
             width: '100%',
-            maxHeight: 150,
+            maxHeight: 360,
             overflowY: 'auto',
             background: 'var(--white)',
             border: '2px solid var(--near-black)',
-            boxShadow: 'var(--shadow-offset)',
+            boxShadow: '6px 6px 0 #111',
           }}>
             {originResults.map((n) => (
               <div
-                key={n.id}
+                key={n.id + (n.landmarkId || '')}
                 onClick={() => selectOrigin(n)}
                 style={{
                   padding: '8px 12px',
@@ -188,8 +192,9 @@ export default function RouteForm({ onRouteResult }) {
                 onMouseEnter={(e) => e.target.style.background = 'var(--surface-alt)'}
                 onMouseLeave={(e) => e.target.style.background = 'var(--white)'}
               >
+                {n.isLandmark && <span style={{ marginRight: 6 }}>{n.icon || '📍'}</span>}
                 <strong>{n.name}</strong>
-                <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{n.zone}</span>
+                <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.625rem' }}>{n.zone}</span>
               </div>
             ))}
           </div>
@@ -199,9 +204,9 @@ export default function RouteForm({ onRouteResult }) {
       <div style={{ position: 'relative' }}>
         <label className="eyebrow" style={{ display: 'block', marginBottom: 4 }}>Destino</label>
         <input
-          placeholder="Buscar intersección..."
-          value={dest}
-          onChange={(e) => handleSearchDest(e.target.value)}
+            placeholder="Buscar lugar, restaurante, hotel..."
+            value={dest}
+            onChange={(e) => handleSearchDest(e.target.value)}
           style={{ width: '100%' }}
         />
         {destResults.length > 0 && (
@@ -209,15 +214,15 @@ export default function RouteForm({ onRouteResult }) {
             position: 'absolute',
             zIndex: 10,
             width: '100%',
-            maxHeight: 150,
+            maxHeight: 360,
             overflowY: 'auto',
             background: 'var(--white)',
             border: '2px solid var(--near-black)',
-            boxShadow: 'var(--shadow-offset)',
+            boxShadow: '6px 6px 0 #111',
           }}>
             {destResults.map((n) => (
               <div
-                key={n.id}
+                key={n.id + (n.landmarkId || '')}
                 onClick={() => selectDest(n)}
                 style={{
                   padding: '8px 12px',
@@ -228,8 +233,9 @@ export default function RouteForm({ onRouteResult }) {
                 onMouseEnter={(e) => e.target.style.background = 'var(--surface-alt)'}
                 onMouseLeave={(e) => e.target.style.background = 'var(--white)'}
               >
+                {n.isLandmark && <span style={{ marginRight: 6 }}>{n.icon || '📍'}</span>}
                 <strong>{n.name}</strong>
-                <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{n.zone}</span>
+                <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.625rem' }}>{n.zone}</span>
               </div>
             ))}
           </div>
