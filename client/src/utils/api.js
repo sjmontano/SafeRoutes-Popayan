@@ -1,4 +1,4 @@
-const API = 'https://saferoutes-popayan.onrender.com/api';
+const API = '/api';
 
 export async function fetchGraphData() {
   const res = await fetch(`${API}/graph`);
@@ -35,9 +35,13 @@ export async function fetchTraffic() {
   return res.json();
 }
 
-export async function searchNodes(query) {
-  const res = await fetch(`${API}/search/nodes?q=${encodeURIComponent(query)}`);
-  return res.json();
+export async function search(query) {
+  const url = `${API}/search?q=${encodeURIComponent(query)}`;
+  console.log('[api search]', url);
+  const res = await fetch(url);
+  const data = await res.json();
+  console.log('[api search] response:', data?.length || 0, 'items, status:', res.status);
+  return data;
 }
 
 export async function calculateRoute(type, from, to, extra = {}) {
