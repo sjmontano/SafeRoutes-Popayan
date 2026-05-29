@@ -1,6 +1,9 @@
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const raw = JSON.parse(readFileSync('src/data/popayan-streets.geojson', 'utf8'));
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const raw = JSON.parse(readFileSync(join(__dirname, 'popayan-streets.geojson'), 'utf8'));
 
 const coordKey = (lat, lng) => `${lat.toFixed(6)},${lng.toFixed(6)}`;
 const nodeMap = new Map();
@@ -245,8 +248,5 @@ const landmarkNodes = {
 
 console.log(`Generated ${NODES.length} nodes, ${EDGES.length} edges, ${ZONES.length} zones`);
 console.log(`Search index: ${INTERSECTION_INDEX.size} intersections, ${STREET_INDEX.size} streets`);
-
-const sampleNamed = NODES.filter(n => n.name && !n.name.startsWith('Intersección')).slice(0, 10);
-console.log('Sample named nodes:', sampleNamed.map(n => n.name));
 
 export { NODES, EDGES, ZONES, REPORT_TYPES, getZoneForNode, landmarkNodes, INTERSECTION_INDEX, STREET_INDEX, normalizeStreetName };
