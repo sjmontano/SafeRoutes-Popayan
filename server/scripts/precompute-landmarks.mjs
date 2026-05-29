@@ -92,9 +92,12 @@ out += `function findNearestNode(lat, lng, nodes) {
 
 function searchLandmarks(query) {
   const q = query.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+  const words = q.split(/\\s+/).filter(Boolean);
+  if (words.length === 0) return [];
   return LANDMARKS.filter(l => {
     const name = l.name.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
-    return name.includes(q) || l.category.toLowerCase().includes(q);
+    const cat = l.category.toLowerCase();
+    return name.includes(q) || words.every(w => name.includes(w)) || cat.includes(q);
   });
 }
 

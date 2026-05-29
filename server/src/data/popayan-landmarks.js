@@ -307,9 +307,9 @@ const LANDMARKS = [
     "name": "Centro Comercial Campanario",
     "category": "comercio",
     "address": "Carrera 9 # 24AN - 21",
-    "lat": 2.447,
-    "lng": -76.609,
-    "nodeId": "n2603"
+    "lat": 2.45929,
+    "lng": -76.595,
+    "nodeId": "n5622"
   },
   {
     "id": "lm_exito",
