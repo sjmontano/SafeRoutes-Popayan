@@ -18,6 +18,7 @@ import {
   formatDistance,
 } from '../services/osrmService.js';
 import { NODES, ZONES, REPORT_TYPES, getZoneForNode } from '../data/generate-popayan.js';
+import { unifiedSearch } from '../services/searchService.js';
 
 const router = express.Router();
 
@@ -259,17 +260,16 @@ router.get('/reports/heatmap', (_req, res) => {
   res.json(heatData);
 });
 
-router.get('/search/nodes', (req, res) => {
+router.get('/search', async (req, res) => {
   const { q } = req.query;
-  if (!q) return res.json(NODES);
-  const query = q.toLowerCase();
-  const results = NODES.filter(
-    (n) =>
-      n.name.toLowerCase().includes(query) ||
-      n.id.toLowerCase().includes(query) ||
-      n.zone.toLowerCase().includes(query)
-  );
-  res.json(results.slice(0, 10));
+  if (!q || q.length < 2) return res.json([]);
+
+  try {
+    const results = await unifiedSearch(q);
+    res.json(results);
+  } catch {
+    res.json([]);
+  }
 });
 
 export default router;
