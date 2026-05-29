@@ -232,10 +232,16 @@ try {
   landmarkNodes = { parque_caldas: 'n0' };
 }
 
+const NODE_MAP = {};
+for (const n of NODES) NODE_MAP[n.id] = n;
+
+const ZONE_BY_NAME = {};
+for (const z of ZONES) ZONE_BY_NAME[z.name] = z;
+
 function getZoneForNode(nodeId) {
-  const n = NODES.find(x => x.id === nodeId);
+  const n = NODE_MAP[nodeId];
   if (!n) return ZONES[0];
-  return ZONES.find(z => z.name === n.zone) || ZONES[0];
+  return ZONE_BY_NAME[n.zone] || ZONES[0];
 }
 
 function normalizeStreetName(name) {

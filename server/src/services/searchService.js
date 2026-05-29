@@ -1,6 +1,15 @@
-import { INTERSECTION_INDEX, STREET_INDEX, NODES, EDGES, normalizeStreetName } from '../data/generate-popayan.js';
-import { LANDMARKS, CATEGORY_ICONS, CATEGORY_LABELS, searchLandmarks, findNearestNode as findNearestNodeFromLandmarks } from '../data/popayan-landmarks.js';
+import { INTERSECTION_INDEX, STREET_INDEX, NODES, EDGES, ZONES, normalizeStreetName } from '../data/generate-popayan.js';
+import { CATEGORY_ICONS, CATEGORY_LABELS, searchLandmarks } from '../data/popayan-landmarks.js';
 import { searchAddress } from './nominatimService.js';
+
+const NODE_MAP = {};
+for (const n of NODES) NODE_MAP[n.id] = n;
+
+const ZONE_INDEX = [];
+for (const z of ZONES) {
+  const entry = NODES.find(n => n.zone === z.name);
+  if (entry) ZONE_INDEX.push({ sanitized: sanitize(z.name), node: entry, zone: z });
+}
 
 function sanitize(q) {
   return q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
@@ -180,33 +189,27 @@ function lookupLandmarks(query) {
 
 function lookupZones(query) {
   const q = sanitize(query);
-  const seenZones = new Set();
   const results = [];
 
-  for (const n of NODES) {
-    const zone = sanitize(n.zone);
-    if (zone.includes(q) && !seenZones.has(n.zone)) {
-      seenZones.add(n.zone);
+  for (const entry of ZONE_INDEX) {
+    if (entry.sanitized.includes(q)) {
       results.push({
-        id: n.id,
-        name: n.zone,
-        zone: n.zone,
-        lat: n.lat,
-        lng: n.lng,
+        id: entry.node.id,
+        name: entry.zone.name,
+        zone: entry.zone.name,
+        lat: entry.node.lat,
+        lng: entry.node.lng,
         icon: '🏘️',
         isZone: true,
       });
+      if (results.length >= 5) break;
     }
-    if (results.length >= 5) break;
   }
 
   return results;
 }
 
 function snapToNearestEdge(lat, lng) {
-  const NODE_MAP = {};
-  for (const n of NODES) NODE_MAP[n.id] = n;
-
   let bestEdge = null;
   let bestDist = Infinity;
   let nearestEndpoint = null;
