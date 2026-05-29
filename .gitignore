@@ -8,3 +8,5 @@ Thumbs.db
 client/dist/
 server/package-lock.json
 client/package-lock.json
+Opera Prima/
+package-lock.json
