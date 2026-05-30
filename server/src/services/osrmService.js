@@ -4,6 +4,7 @@ const cache = new Map();
 const PROFILE_MAP = { walking: 'foot', bike: 'bicycle', car: 'driving', motorcycle: 'driving' };
 const SPEED_ADJUST = { walking: 1.0, bike: 1.0, car: 1.0, motorcycle: 0.7 };
 const SPEED_MS = { walking: 1.4, bike: 4.2, car: 11.1, motorcycle: 13.9 };
+const ROAD_FACTOR = { walking: 1.3, bike: 1.5, car: 1.6, motorcycle: 1.6 };
 const MODE_LABELS = {
   walking: { label: 'Caminando' },
   bike: { label: 'Bicicleta' },
@@ -79,12 +80,14 @@ export async function enrichPathWithGeometry(path, mode, graph) {
     allCoords = [];
     totalDist = 0;
     totalDur = 0;
+    const rf = ROAD_FACTOR[mode] || 1.5;
     for (let i = 0; i < path.length; i++) {
       const fn = graph.getNode(path[i].from);
       const tn = graph.getNode(path[i].to);
       const d = haversineM(fn.lat, fn.lng, tn.lat, tn.lng);
-      totalDist += d;
-      totalDur += Math.round((d / speedMs) * tf);
+      const roadDist = d * rf;
+      totalDist += roadDist;
+      totalDur += Math.round((roadDist / speedMs) * tf);
       allCoords.push([fn.lat, fn.lng]);
       if (i === path.length - 1) allCoords.push([tn.lat, tn.lng]);
     }

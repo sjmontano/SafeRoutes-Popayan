@@ -1,8 +1,8 @@
 import {
-  IconBuildingMonument, IconMasksTheater, IconRestaurant, IconBuilding,
+  IconBuildingMonument, IconMasksTheater, IconChefHat, IconBuilding,
   IconBuildingStore, IconBus, IconHeartPlus, IconSchool,
-  IconBuildingGovernment, IconBallFootball, IconTree, IconBuildingBank,
-  IconBuildings, IconChurch, IconCross,
+  IconBuildingPavilion, IconBallFootball, IconTree, IconBuildingBank,
+  IconBuildings, IconBuildingChurch, IconCross,
   IconMapPin, IconMapPinFilled, IconBuildingCommunity, IconRoad,
   IconWalk, IconBike, IconCar, IconMotorbike,
   IconShield, IconScale, IconBolt,
@@ -12,18 +12,18 @@ import {
 const CATEGORY_MAP = {
   turismo: IconBuildingMonument,
   cultura: IconMasksTheater,
-  restaurante: IconRestaurant,
+  restaurante: IconChefHat,
   hotel: IconBuilding,
   comercio: IconBuildingStore,
   transporte: IconBus,
   salud: IconHeartPlus,
   educacion: IconSchool,
-  gobierno: IconBuildingGovernment,
+  gobierno: IconBuildingPavilion,
   deporte: IconBallFootball,
   parque: IconTree,
   banco: IconBuildingBank,
   barrio: IconBuildings,
-  religion: IconChurch,
+  religion: IconBuildingChurch,
   entierro: IconCross,
 };
 

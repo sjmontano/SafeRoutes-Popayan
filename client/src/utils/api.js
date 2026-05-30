@@ -2,6 +2,11 @@ const API = import.meta.env.DEV
   ? '/api'
   : 'https://saferoutes-popayan.onrender.com/api';
 
+export async function fetchRiskZones() {
+  const res = await fetch(`${API}/graph/risk-zones`);
+  return res.json();
+}
+
 export async function fetchGraphData() {
   const res = await fetch(`${API}/graph`);
   return res.json();

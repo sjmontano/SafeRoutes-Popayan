@@ -5,15 +5,17 @@ import RouteForm from './components/RoutePanel/RouteForm';
 import RouteResult from './components/RoutePanel/RouteResult';
 import ReportPanel from './components/ReportForm/ReportPanel';
 import ProfilePanel from './components/UserProfile/ProfilePanel';
-import { fetchGraphData, fetchReports, fetchHeatmap } from './utils/api';
+import { fetchGraphData, fetchReports, fetchHeatmap, fetchRiskZones } from './utils/api';
 import { getSession } from './utils/auth';
 
 export default function App() {
   const [routeResult, setRouteResult] = useState(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [showZones, setShowZones] = useState(false);
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [reports, setReports] = useState([]);
   const [heatmapData, setHeatmapData] = useState([]);
+  const [riskZones, setRiskZones] = useState(null);
   const [activeTab, setActiveTab] = useState('route');
   const [user, setUser] = useState(() => getSession());
 
@@ -21,10 +23,12 @@ export default function App() {
     fetchGraphData().then(setGraphData).catch(() => {});
     fetchReports().then(setReports).catch(() => {});
     fetchHeatmap().then(setHeatmapData).catch(() => {});
+    fetchRiskZones().then(setRiskZones).catch(() => {});
   }, []);
 
   const handleRouteResult = useCallback((r) => setRouteResult(r), []);
   const toggleGraph = () => setShowGraph(p => !p);
+  const toggleZones = () => setShowZones(p => !p);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: 'var(--font)' }}>
@@ -68,19 +72,22 @@ export default function App() {
             allNodes={graphData.nodes}
             allEdges={graphData.edges}
             showGraph={showGraph}
+            showZones={showZones}
+            riskZones={riskZones}
             heatmapData={heatmapData}
+            onToggleZones={toggleZones}
           />
           <div style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 1000, background: 'var(--white)', border: '2px solid var(--near-black)', boxShadow: 'var(--shadow-offset)', padding: 12, fontSize: '0.5625rem' }}>
-            <div style={{ fontWeight: 800, marginBottom: 4, letterSpacing: '0.06em' }}>LEYENDA</div>
+            <div style={{ fontWeight: 800, marginBottom: 4, letterSpacing: '0.06em' }}>RIESGO</div>
             {[
-              { color: '#16A34A', label: 'Riesgo Bajo' },
-              { color: '#F59E0B', label: 'Riesgo Medio' },
-              { color: '#F65B7F', label: 'Riesgo Alto' },
-              { color: '#DC2626', label: 'Riesgo Crítico' },
+              { color: '#16A34A', label: 'Bajo', range: '0 - 0.29' },
+              { color: '#F59E0B', label: 'Medio', range: '0.30 - 0.54' },
+              { color: '#F65B7F', label: 'Alto', range: '0.55 - 0.69' },
+              { color: '#DC2626', label: 'Crítico', range: '0.70 - 1.0' },
             ].map(item => (
               <div key={item.color} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 14, height: 4, background: item.color }} />
-                <span>{item.label}</span>
+                <div style={{ width: 14, height: 14, background: item.color, border: '2px solid #111' }} />
+                <span><strong>{item.label}</strong> <span style={{ color: 'var(--text-muted)' }}>{item.range}</span></span>
               </div>
             ))}
           </div>

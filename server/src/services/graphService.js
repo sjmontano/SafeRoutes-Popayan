@@ -1,5 +1,6 @@
 import { Graph } from '../algorithms/Graph.js';
 import { NODES, EDGES, ZONES, getZoneForNode } from '../data/generate-popayan.js';
+import { getRiskZone } from '../data/risk-zones.js';
 
 const NODE_MAP = {};
 for (const n of NODES) {
@@ -59,11 +60,13 @@ export function reportDecay(daysAgo) {
   return 0.05;
 }
 
-function computeSafetyWeight(edge) {
+function computeSafetyWeight(edge, mode = 'walking') {
   const fromZone = getZoneForNode(edge.from);
+  const fromNode = NODE_MAP[edge.from];
+  const riskZone = fromNode ? getRiskZone(fromNode.lat, fromNode.lng) : null;
   const hourFactor = getHourFactor();
 
-  const seguridadBase = fromZone.riskLevel;
+  const seguridadBase = riskZone ? (riskZone.riskLevel + fromZone.riskLevel) / 2 : fromZone.riskLevel;
   const comercioInverso = 1 - fromZone.commercePresence;
   const policiaInverso = 1 - fromZone.policePresence;
   const caiFactor = fromZone.caiNearby ? 0 : 0.15;
@@ -92,20 +95,20 @@ function computeSafetyWeight(edge) {
   );
 }
 
-export function calculateEdgeWeight(edge, type = 'safest') {
+export function calculateEdgeWeight(edge, type = 'safest', mode = 'walking') {
   const distKm = edgeDistanceKm(edge);
 
   if (type === 'fastest') {
     return distKm * 100;
   }
 
-  const safety = computeSafetyWeight(edge);
+  const safety = computeSafetyWeight(edge, mode);
 
   if (type === 'balanced') {
-    return safety + distKm * 10;
+    return safety * 3 + distKm * 30;
   }
 
-  return Math.pow(safety, 3) + distKm * 0.05;
+  return Math.pow(safety, 3) * 10 + distKm * 0.05;
 }
 
 const ONE_WAY_AWARE_MODES = ['car', 'motorcycle'];
@@ -132,7 +135,7 @@ export function buildGraph(routeType = 'safest', mode = 'walking') {
     if (addedPair.has(pairKey)) continue;
     addedPair.add(pairKey);
 
-    const weight = calculateEdgeWeight(edge, routeType);
+    const weight = calculateEdgeWeight(edge, routeType, mode);
     graph.addEdge(edge.id, edge.from, edge.to, weight, { name: edge.name });
 
     if (!oneWayAware) {
@@ -141,7 +144,7 @@ export function buildGraph(routeType = 'safest', mode = 'walking') {
     } else {
       const reverse = EDGES.find(e => e.from === edge.to && e.to === edge.from);
       if (reverse) {
-        const rw = calculateEdgeWeight(reverse, routeType);
+        const rw = calculateEdgeWeight(reverse, routeType, mode);
         graph.addEdge(reverse.id, reverse.from, reverse.to, rw, { name: reverse.name });
       }
     }

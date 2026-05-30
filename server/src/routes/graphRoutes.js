@@ -18,6 +18,7 @@ import {
   formatDistance,
 } from '../services/osrmService.js';
 import { NODES, ZONES, REPORT_TYPES, getZoneForNode } from '../data/generate-popayan.js';
+import { generateZoneGeoJSON, getRiskZone } from '../data/risk-zones.js';
 import { unifiedSearch } from '../services/searchService.js';
 
 const router = express.Router();
@@ -32,6 +33,10 @@ router.get('/graph/nodes', (_req, res) => {
 
 router.get('/graph/zones', (_req, res) => {
   res.json(ZONES);
+});
+
+router.get('/graph/risk-zones', (_req, res) => {
+  res.json(generateZoneGeoJSON());
 });
 
 router.get('/graph/report-types', (_req, res) => {
@@ -59,23 +64,34 @@ async function computePath(from, to, mode, routeType, graph) {
   const path = reconstructPath(result.previous, to);
   const enriched = await enrichPathWithGeometry(path, mode, graph);
 
-  const pathSegments = enriched.segments.map((seg) => ({
-    from: seg.from,
-    to: seg.to,
-    edgeId: seg.edgeId,
-    name: seg.name,
-    weight: seg.weight,
-    fromCoords: [graph.getNode(seg.from).lat, graph.getNode(seg.from).lng],
-    toCoords: [graph.getNode(seg.to).lat, graph.getNode(seg.to).lng],
-    geometry: seg.geometry,
-    distanceMeters: seg.distanceMeters,
-    durationSecs: seg.durationSecs,
-    trafficFactor: seg.trafficFactor,
-  }));
+  const pathSegments = enriched.segments.map((seg) => {
+    const fromNode = graph.getNode(seg.from);
+    const toNode = graph.getNode(seg.to);
+    const midLat = (fromNode.lat + toNode.lat) / 2;
+    const midLng = (fromNode.lng + toNode.lng) / 2;
+    const zone = getRiskZone(midLat, midLng);
+    const riskLabel = zone.riskLevel < 0.3 ? 'Bajo' : zone.riskLevel < 0.55 ? 'Medio' : zone.riskLevel < 0.72 ? 'Alto' : 'Crítico';
+    return {
+      from: seg.from,
+      to: seg.to,
+      edgeId: seg.edgeId,
+      name: seg.name,
+      weight: seg.weight,
+      fromCoords: [fromNode.lat, fromNode.lng],
+      toCoords: [toNode.lat, toNode.lng],
+      geometry: seg.geometry,
+      distanceMeters: seg.distanceMeters,
+      durationSecs: seg.durationSecs,
+      trafficFactor: seg.trafficFactor,
+      zoneName: zone.name,
+      zoneRisk: zone.riskLevel,
+      riskLabel,
+    };
+  });
 
   let totalSafetyRisk = 0;
   for (const step of path) {
-    totalSafetyRisk += calculateEdgeWeight(step.edge, 'safest');
+    totalSafetyRisk += calculateEdgeWeight(step.edge, 'safest', mode);
   }
   const avgRisk = path.length > 0 ? totalSafetyRisk / path.length : 0;
   const riskLabel = avgRisk < 0.35 ? 'Bajo' : avgRisk < 0.55 ? 'Medio' : avgRisk < 0.70 ? 'Alto' : 'Crítico';
