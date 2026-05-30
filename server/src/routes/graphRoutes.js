@@ -18,10 +18,13 @@ import {
   formatDistance,
 } from '../services/osrmService.js';
 import { NODES, ZONES, REPORT_TYPES, getZoneForNode } from '../data/generate-popayan.js';
-import { generateZoneGeoJSON, getRiskZone } from '../data/risk-zones.js';
+import { generateZoneGeoJSON, getRiskZone, initRiskZones, setAllNodes } from '../data/risk-zones.js';
 import { unifiedSearch } from '../services/searchService.js';
 
 const router = express.Router();
+
+initRiskZones(NODES);
+setAllNodes(NODES);
 
 router.get('/graph', (_req, res) => {
   res.json(getGraphData());
@@ -89,17 +92,20 @@ async function computePath(from, to, mode, routeType, graph) {
     };
   });
 
-  let totalSafetyRisk = 0;
-  for (const step of path) {
-    totalSafetyRisk += calculateEdgeWeight(step.edge, 'safest', mode);
+  let totalDistance = 0;
+  let weightedRiskSum = 0;
+  for (const seg of pathSegments) {
+    const segDist = seg.distanceMeters || 1;
+    totalDistance += segDist;
+    weightedRiskSum += seg.zoneRisk * segDist;
   }
-  const avgRisk = path.length > 0 ? totalSafetyRisk / path.length : 0;
-  const riskLabel = avgRisk < 0.35 ? 'Bajo' : avgRisk < 0.55 ? 'Medio' : avgRisk < 0.70 ? 'Alto' : 'Crítico';
+  const avgRisk = totalDistance > 0 ? weightedRiskSum / totalDistance : 0.15;
+  const riskLabel = avgRisk < 0.3 ? 'Bajo' : avgRisk < 0.55 ? 'Medio' : avgRisk < 0.72 ? 'Alto' : 'Crítico';
 
   return {
     type: routeType,
     path: pathSegments,
-    totalRisk: totalSafetyRisk,
+    weightedRisk: weightedRiskSum,
     avgRisk,
     riskLabel,
     totalDistanceMeters: enriched.totalDistanceMeters,
@@ -189,31 +195,45 @@ router.post('/route/astar-safest', async (req, res) => {
     if (!result) return res.status(404).json({ error: 'No hay ruta disponible' });
 
     const enriched = await enrichPathWithGeometry(result.path, mode, graph);
-    const pathDetails = enriched.segments.map((seg) => ({
-      from: seg.from,
-      to: seg.to,
-      edgeId: seg.edgeId,
-      name: seg.name,
-      weight: seg.weight,
-      fromCoords: [graph.getNode(seg.from).lat, graph.getNode(seg.from).lng],
-      toCoords: [graph.getNode(seg.to).lat, graph.getNode(seg.to).lng],
-      geometry: seg.geometry,
-      distanceMeters: seg.distanceMeters,
-      durationSecs: seg.durationSecs,
-      trafficFactor: seg.trafficFactor,
-    }));
+    const pathDetails = enriched.segments.map((seg) => {
+      const fromNode = graph.getNode(seg.from);
+      const toNode = graph.getNode(seg.to);
+      const midLat = (fromNode.lat + toNode.lat) / 2;
+      const midLng = (fromNode.lng + toNode.lng) / 2;
+      const zone = getRiskZone(midLat, midLng);
+      const riskLabel = zone.riskLevel < 0.3 ? 'Bajo' : zone.riskLevel < 0.55 ? 'Medio' : zone.riskLevel < 0.72 ? 'Alto' : 'Crítico';
+      return {
+        from: seg.from,
+        to: seg.to,
+        edgeId: seg.edgeId,
+        name: seg.name,
+        weight: seg.weight,
+        fromCoords: [fromNode.lat, fromNode.lng],
+        toCoords: [toNode.lat, toNode.lng],
+        geometry: seg.geometry,
+        distanceMeters: seg.distanceMeters,
+        durationSecs: seg.durationSecs,
+        trafficFactor: seg.trafficFactor,
+        zoneName: zone.name,
+        zoneRisk: zone.riskLevel,
+        riskLabel,
+      };
+    });
 
-    let totalSafetyRisk = 0;
-    for (const step of result.path) {
-      totalSafetyRisk += calculateEdgeWeight(step.edge, 'safest');
+    let totalDist = 0;
+    let weightedRiskSum = 0;
+    for (const seg of pathDetails) {
+      const d = seg.distanceMeters || 1;
+      totalDist += d;
+      weightedRiskSum += seg.zoneRisk * d;
     }
-    const avgRisk = result.path.length > 0 ? totalSafetyRisk / result.path.length : 0;
-    const riskLabel = avgRisk < 0.35 ? 'Bajo' : avgRisk < 0.55 ? 'Medio' : avgRisk < 0.70 ? 'Alto' : 'Crítico';
+    const avgRisk = totalDist > 0 ? weightedRiskSum / totalDist : 0.15;
+    const riskLabel = avgRisk < 0.3 ? 'Bajo' : avgRisk < 0.55 ? 'Medio' : avgRisk < 0.72 ? 'Alto' : 'Crítico';
 
     res.json({
       type: 'astar-safest',
       path: pathDetails,
-      totalRisk: totalSafetyRisk,
+      weightedRisk: weightedRiskSum,
       avgRisk,
       riskLabel,
       totalDistanceMeters: enriched.totalDistanceMeters,
