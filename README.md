@@ -2,7 +2,7 @@
 
 > Rutas seguras basadas en teoría de grafos para Popayán, Colombia.
 
-[![Deploy](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://saferoutes-popayan.vercel.app)
+[![Deploy](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://safe-routes-popayan.vercel.app)
 [![API](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://saferoutes-popayan.onrender.com)
 
 ---
@@ -38,7 +38,7 @@ peso = w1·seguridad_base + w2·reportes + w3·factor_hora
 
 | Servicio | URL | Estado |
 |----------|-----|--------|
-| **Frontend** | [Vercel](https://saferoutes-popayan.vercel.app) | 🟢 Live |
+| **Frontend** | [Vercel](https://safe-routes-popayan.vercel.app) | 🟢 Live |
 | **Backend API** | [Render](https://saferoutes-popayan.onrender.com) | 🟢 Live |
 
 > ⚠️ El tier gratis de Render duerme tras 15 min de inactividad. La primera petición puede tardar ~50s.

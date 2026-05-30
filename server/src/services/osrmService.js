@@ -3,11 +3,12 @@ const cache = new Map();
 
 const PROFILE_MAP = { walking: 'foot', bike: 'bicycle', car: 'driving', motorcycle: 'driving' };
 const SPEED_ADJUST = { walking: 1.0, bike: 1.0, car: 1.0, motorcycle: 0.7 };
+const SPEED_MS = { walking: 1.4, bike: 4.2, car: 11.1, motorcycle: 13.9 };
 const MODE_LABELS = {
-  walking: { icon: '🚶', label: 'Caminando' },
-  bike: { icon: '🚴', label: 'Bicicleta' },
-  car: { icon: '🚗', label: 'Carro' },
-  motorcycle: { icon: '🏍️', label: 'Moto' },
+  walking: { label: 'Caminando' },
+  bike: { label: 'Bicicleta' },
+  car: { label: 'Carro' },
+  motorcycle: { label: 'Moto' },
 };
 
 export function getTrafficFactor() {
@@ -60,6 +61,7 @@ async function fetchOSRM(lat1, lng1, lat2, lng2, profile) {
 export async function enrichPathWithGeometry(path, mode, graph) {
   const profile = PROFILE_MAP[mode] || 'driving';
   const adj = SPEED_ADJUST[mode] || 1.0;
+  const speedMs = SPEED_MS[mode] || 1.4;
   const tf = (mode === 'car' || mode === 'motorcycle') ? getTrafficFactor() : 1.0;
 
   const startN = graph.getNode(path[0].from);
@@ -82,7 +84,7 @@ export async function enrichPathWithGeometry(path, mode, graph) {
       const tn = graph.getNode(path[i].to);
       const d = haversineM(fn.lat, fn.lng, tn.lat, tn.lng);
       totalDist += d;
-      totalDur += Math.round((d / 1.4) * adj * tf);
+      totalDur += Math.round((d / speedMs) * tf);
       allCoords.push([fn.lat, fn.lng]);
       if (i === path.length - 1) allCoords.push([tn.lat, tn.lng]);
     }

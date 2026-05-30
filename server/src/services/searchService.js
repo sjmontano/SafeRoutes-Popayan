@@ -1,5 +1,5 @@
 import { INTERSECTION_INDEX, STREET_INDEX, NODES, EDGES, ZONES, normalizeStreetName, NODE_MAP } from '../data/generate-popayan.js';
-import { CATEGORY_ICONS, CATEGORY_LABELS, searchLandmarks } from '../data/popayan-landmarks.js';
+import { CATEGORY_LABELS, searchLandmarks } from '../data/popayan-landmarks.js';
 import { searchAddress } from './nominatimService.js';
 
 const ZONE_INDEX = [];
@@ -180,7 +180,6 @@ function lookupLandmarks(query) {
       zone: node ? node.zone : (CATEGORY_LABELS[l.category] || l.category),
       lat: node ? node.lat : l.lat,
       lng: node ? node.lng : l.lng,
-      icon: CATEGORY_ICONS[l.category] || '📍',
       isLandmark: true,
       landmarkId: l.id,
       category: l.category,
